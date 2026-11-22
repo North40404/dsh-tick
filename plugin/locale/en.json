@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "DSH-Tick",
+    "description": "Schedule one-shot reminders for a session. When a task is due, the session is woken with your note so the agent can act on it.",
+    "detail": "docs/DETAIL.md"
+  }
+}

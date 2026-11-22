@@ -1,0 +1,8 @@
+# DSH-Tick 的 bundle patch。
+#
+# 只插入一行：调度插件本体（Host + Client 后续补齐）。
+# 桥接（chat row）将来另起一行，patchId 用 `tick-chat`。
+- insert:
+    - id: tick
+      name: dsh-tick
+      config: {}

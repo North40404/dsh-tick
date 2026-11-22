@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "DSH-Tick",
+    "description": "给会话安排定时任务：到点后唤醒该会话，并带上你留给未来的说明，让模型接着做事。",
+    "detail": "docs/DETAIL.md"
+  }
+}
