@@ -19,7 +19,7 @@
 | 能力 | 证据 |
 |---|---|
 | 6 个工具 | tick_once / repeat / list / cancel / update / run |
-| 设置页 | 14 项参数 + 任务增删改 + 会话选择 + 总开关 + 错过提醒 + 配额统计 |
+| 设置页 | 15 项参数 + 任务增删改 + 会话选择 + 总开关 + 错过提醒 + 配额统计 |
 | 归档会话过滤 | 14 个会话排除 10 个归档 |
 | 每会话 token 预算 | 两个会话各自用自己的用量被拦（1,969,128 vs 14,160） |
 | 当日 token 统计 | 与直接读会话文件算出的真值对齐（3,278,977 vs 3,237,422） |
@@ -38,7 +38,7 @@
 
 > 参数从 16 落到 15：`waitMaxMinutes` 已删除（改为直接投递）。
 
-测试：**91 项全过**（`node --test --test-isolation=none test/`）。
+测试：**89 项全过**（`node --test --test-isolation=none test/`）。
 
 **待验证一项**：世代守卫（防"重载后旧实例把已删任务写回"）已实现，
 但需要"重载时正好有任务在等空闲"的时机才能复现；日志关键字
@@ -132,8 +132,8 @@ tick 自己的模型——**一个 job = 一次机会 + 一个意图**。
 
 | 文件 | 用途 |
 |---|---|
-| `render-tick-settings.mjs` | 桩 React 在 Node 里渲染设置页，验证渲染改动（`MULTI=1` 测多会话，`FORCE_ERROR=1` 测兜底） |
-| `analyze-session-tokens.mjs` | 直接读会话文件算当日真实 token，用于校准统计 |
+| `render-tick-settings.mjs` | 桩 React 在 Node 里渲染设置页，验证渲染改动（`MULTI=1` 测多会话，`FORCE_ERROR=1` 测兜底）。**开发期工具，未随本仓库分发** |
+| `analyze-session-tokens.mjs` | 直接读会话文件算当日真实 token，用于校准统计。**开发期工具，未随本仓库分发** |
 | `dsh-tick-崩溃排查结论.md` | 崩溃排查的证据、假设与补丁建议 |
 
 ## 运维速查
