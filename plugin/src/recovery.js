@@ -38,13 +38,29 @@ export function classifyScan({ now, lastScanAt, scanIntervalMs, factor = 3 }) {
  * @param {object} job
  * @param {{now: number, lateToleranceMin: number}} ctx
  */
-export function decideMissed(job, { now, lateToleranceMin }) {
+/**
+ * 周期任务的默认宽限（毫秒）。
+ *
+ * 扫描是分钟级的，到期时刻几乎总落在两次扫描之间，
+ * 于是"迟到几十秒"是常态而非异常——宽限要比扫描间隔略大。
+ */
+export const DEFAULT_GRACE_MS = 90 * 1000
+
+export function decideMissed(job, { now, lateToleranceMin, graceMs = DEFAULT_GRACE_MS }) {
   const lateMs = now - job.nextDueAt
   if (lateMs <= 0) return { action: 'not-due', lateMin: 0 }
   const lateMin = Math.floor(lateMs / MINUTE_MS)
 
-  // 周期任务：过期的那一轮直接丢掉，重新排（不做补偿）
+  // 周期任务：过期的那一轮直接丢掉，重新排（不做补偿）。
+  //
+  // 但"迟到"必须分两种：
+  //   · 扫描粒度造成的秒级迟到（到期时刻落在两次扫描之间）→ 正常触发
+  //   · 真正错过（休眠、长时间卡顿）→ 冻结，重新排下一次
+  //
+  // 早期版本没有这个区分：只要 lateMs > 0 就 reschedule，
+  // 而扫描间隔是分钟级，于是周期任务**永远等不到自己**（F12/F13 覆盖）。
   if (job.cadence.type !== 'once') {
+    if (lateMs <= graceMs) return { action: 'fire', lateMin }
     return { action: 'reschedule', lateMin }
   }
 

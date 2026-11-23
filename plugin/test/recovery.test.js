@@ -161,3 +161,16 @@ test('TTL · 混合列表只返回该清理的那些', () => {
   const out = expiredUnreachable(jobs, now, TTL)
   assert.deepEqual(out.map((job) => job.id), ['old'])
 })
+
+test('F12 · 周期任务仅迟到 45 秒 → 正常触发（扫描粒度，不算错过）', () => {
+  const job = { cadence: { type: 'random', minMinutes: 25, maxMinutes: 45 }, nextDueAt: 10 * MIN, importance: 'normal' }
+  const result = decideMissed(job, { now: 10 * MIN + 45 * 1000, lateToleranceMin: 30 })
+  assert.equal(result.action, 'fire')
+  assert.equal(result.lateMin, 0)
+})
+
+test('F13 · 周期任务迟到 3 分钟（超过宽限）→ 仍冻结重排', () => {
+  const job = { cadence: { type: 'fixed', everyMinutes: 30 }, nextDueAt: 10 * MIN, importance: 'normal' }
+  const result = decideMissed(job, { now: 10 * MIN + 3 * MIN, lateToleranceMin: 30, graceMs: 90 * 1000 })
+  assert.equal(result.action, 'reschedule')
+})

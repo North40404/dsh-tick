@@ -1,35 +1,35 @@
-{
-  "name": "dsh-tick",
-  "version": "0.0.1",
-  "private": true,
-  "type": "module",
-  "description": "为 DSH 会话安排定时任务：到点后唤醒模型执行",
-  "exports": {
-    ".": "./index.js",
-    "./client": "./client.js",
-    "./locale/*.json": "./locale/*.json",
-    "./icon": "./icon.svg"
-  },
-  "dsh": {
-    "bundle": {
-      "patch": "./cordis.patch.yml"
-    },
-    "client": {
-      "platform": "web"
-    }
-  },
-  "files": [
-    "index.js",
-    "client.js",
-    "cordis.patch.yml",
-    "src",
-    "locale/*.json",
-    "docs",
-    "icon.svg",
-    "README.md"
-  ],
-  "scripts": {
-    "test": "node --test --test-isolation=none test/"
-  },
-  "license": "MIT"
+﻿{
+    "name":  "dsh-tick",
+    "version":  "0.0.2",
+    "private":  true,
+    "type":  "module",
+    "description":  "为 DSH 会话安排定时任务：到点后唤醒模型执行",
+    "exports":  {
+                    ".":  "./index.js",
+                    "./client":  "./client.js",
+                    "./locale/*.json":  "./locale/*.json",
+                    "./icon":  "./icon.svg"
+                },
+    "dsh":  {
+                "bundle":  {
+                               "patch":  "./cordis.patch.yml"
+                           },
+                "client":  {
+                               "platform":  "web"
+                           }
+            },
+    "files":  [
+                  "index.js",
+                  "client.js",
+                  "cordis.patch.yml",
+                  "src",
+                  "locale/*.json",
+                  "docs",
+                  "icon.svg",
+                  "README.md"
+              ],
+    "scripts":  {
+                    "test":  "node --test --test-isolation=none test/"
+                },
+    "license":  "MIT"
 }

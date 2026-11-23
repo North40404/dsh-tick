@@ -23,6 +23,7 @@ import { sumTodayTokens } from './src/tokens.js'
 import { dayKey, minutesOfDay, parseClockTime, withinWindow, zonedParts } from './src/timezone.js'
 import { DEFAULTS, loadSettings, saveSettings, validatePatch } from './src/config.js'
 import { lateToleranceMinutes, resolveGate } from './src/settings.js'
+import { DEFAULT_GRACE_MS } from './src/recovery.js'
 import { openStore } from './src/store.js'
 import { describeCadence } from './src/cadence.js'
 
@@ -484,6 +485,9 @@ export function apply(ctx, config = {}) {
               lateToleranceMin: lateToleranceMinutes(job.cadence.type, job.importance, {
                 global: { lateToleranceOnceMin: settings.lateToleranceOnceMin },
               }),
+              // 周期任务的宽限：扫描间隔 + 10 秒。
+              // 到期时刻落在两次扫描之间属于正常，不能算错过（否则永远不触发）。
+              graceMs: Math.max(DEFAULT_GRACE_MS, settings.scanIntervalMin * 60_000 + 10_000),
             })
             if (
               decision.action === 'drop' ||
