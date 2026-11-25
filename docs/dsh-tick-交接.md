@@ -38,7 +38,7 @@
 
 > 参数从 16 落到 15：`waitMaxMinutes` 已删除（改为直接投递）。
 
-测试：**89 项全过**（`node --test --test-isolation=none test/`）。
+测试：**101 项全过**（`node --test --test-isolation=none test/`）。
 
 **待验证一项**：世代守卫（防"重载后旧实例把已删任务写回"）已实现，
 但需要"重载时正好有任务在等空闲"的时机才能复现；日志关键字
@@ -140,6 +140,11 @@ tick 自己的模型——**一个 job = 一次机会 + 一个意图**。
    写边界用例时，除了"明显该成功/失败"的大数值，必须补一条**贴着阈值的日常值**（本次补了 F12/F13）。
 10. **"迟到 0 分钟"是取整误导**：`lateMin` 是 `Math.floor(lateMs / 60000)`，
     59 秒会显示成 0。看到"迟到 0 分钟却判定错过"时，先怀疑判据而不是时钟。
+11. **PowerShell 写 JSON 会带 BOM，插件加载直接失败**：
+    `Set-Content -Encoding UTF8` 在 Windows PowerShell 5.1 下会加 `EF BB BF`，
+    而插件的 `package.json` 按严格 JSON 解析，报 `Unexpected token '\uFEFF'`。
+    写 JSON/YAML/JS 一律用：`[IO.File]::WriteAllText(path, text, (New-Object System.Text.UTF8Encoding($false)))`。
+    推仓库前顺手扫一遍：读前 3 字节是不是 `EF BB BF`。
 
 ## 可复用的工具（都在 workspace）
 

@@ -44,7 +44,7 @@ docs/          相关设计与验收文档副本
 node --test --test-isolation=none test/
 ```
 
-89 项，覆盖闸、补偿、竞态、渲染兜底等（`node --test --test-isolation=none test/`）。
+101 项，覆盖闸、补偿、竞态、渲染兜底等（`node --test --test-isolation=none test/`）。
 
 ## 文档导航
 

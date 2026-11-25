@@ -48,7 +48,7 @@
 | `src/settings.js` | 四级生效链与安全闸常量 |
 | `src/store.js` | 持久化（原子写） |
 | `src/timezone.js` | 时区下的窗口与自然日 |
-| `test/` | 63 项单元测试 |
+| `test/` | 101 项单元测试 |
 
 ## 数据
 
