@@ -198,7 +198,7 @@ apply()
 | D9 | 注入来源自证 `plugin:dsh-tick` | ⬜ 未复核（走 prompt 后由宿主决定） |
 | D10 | 三段式 `resolveAgent → inject → followup` | — 未采用，改用 `prompt()` |
 | D11 | **忙时也直接投递**：`prompt(mode:'queue')` 由宿主排队，不插话、不等待、不丢提醒 | ✅ 实测（忙时 12ms 内投递完成，无空闲探测） |
-| D12 | 删掉"等空闲"整套机制（`waitForIdle` / `runGate` / `probeIdle` / `waitMaxMinutes`） | ✅ 已删除，89 项测试通过 |
+| D12 | 删掉"等空闲"整套机制（`waitForIdle` / `runGate` / `probeIdle` / `waitMaxMinutes`） | ✅ 已删除，89 项测试通过（当时的用例数；现为 101） |
 
 ---
 
