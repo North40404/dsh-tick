@@ -87,3 +87,20 @@ test('其它数值字段仍必须是整数', () => {
   assert.match(validatePatch({ maxJobs: 2.5 }).errors.maxJobs, /整数/)
   assert.match(validatePatch({ maxRunsPerDay: 1.5 }).errors.maxRunsPerDay, /整数/)
 })
+
+
+// ── D25：间隔下限默认 5，且不得小于扫描间隔 ──────────────────────
+test('D25 · minIntervalMin 出厂默认是 5', () => {
+  assert.equal(DEFAULTS.minIntervalMin, 5)
+})
+
+test('D25 · 最小间隔小于扫描间隔时保存被拒', () => {
+  const checked = validatePatch({ minIntervalMin: 3, scanIntervalMin: 5 }, DEFAULTS)
+  assert.equal(checked.ok, false)
+  assert.match(checked.errors.minIntervalMin, /不能小于扫描间隔/)
+})
+
+test('D25 · 合法组合可以通过', () => {
+  const checked = validatePatch({ minIntervalMin: 6, scanIntervalMin: 5 }, DEFAULTS)
+  assert.equal(checked.ok, true)
+})

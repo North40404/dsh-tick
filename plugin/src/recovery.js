@@ -61,6 +61,9 @@ export function decideMissed(job, { now, lateToleranceMin, graceMs = DEFAULT_GRA
   // 而扫描间隔是分钟级，于是周期任务**永远等不到自己**（F12/F13 覆盖）。
   if (job.cadence.type !== 'once') {
     if (lateMs <= graceMs) return { action: 'fire', lateMin }
+    // D22：重要周期任务也补告知（普通周期任务仍静默顺延）；
+    // 周期任务补告知后**继续排下一轮**，不像 once 那样就此结束。
+    if (job.importance === 'important') return { action: 'miss', alsoReschedule: true, lateMin }
     return { action: 'reschedule', lateMin }
   }
 

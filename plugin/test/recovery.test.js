@@ -38,10 +38,11 @@ test('F10 · 周期任务错过 → 冻结重排，不补跑', () => {
   assert.equal(result.lateMin, 300)
 })
 
-test('F11 · 周期 important 也冻结（不因重要而补执行）', () => {
+test('F11 · 周期 important 补告知（D22 改语义：不再静默冻结）', () => {
   const job = { cadence: { type: 'random', minMinutes: 40, maxMinutes: 46 }, nextDueAt: 10 * MIN, importance: 'important' }
   const result = decideMissed(job, { now: 10 * MIN + 8 * 60 * MIN, lateToleranceMin: 30 })
-  assert.equal(result.action, 'reschedule')
+  assert.equal(result.action, 'miss')
+  assert.equal(result.alsoReschedule, true)
 })
 
 test('F6 · once 迟到 20 分钟（容忍 30）→ 正常补发', () => {
@@ -173,4 +174,20 @@ test('F13 · 周期任务迟到 3 分钟（超过宽限）→ 仍冻结重排', 
   const job = { cadence: { type: 'fixed', everyMinutes: 30 }, nextDueAt: 10 * MIN, importance: 'normal' }
   const result = decideMissed(job, { now: 10 * MIN + 3 * MIN, lateToleranceMin: 30, graceMs: 90 * 1000 })
   assert.equal(result.action, 'reschedule')
+})
+
+
+// ── D22：重要周期任务补告知，且继续排期 ─────────────────────────
+test('D22 · 重要周期任务超出宽限 → miss 且要求继续排期', () => {
+  const job = { cadence: { type: 'random', minMinutes: 40, maxMinutes: 46 }, nextDueAt: 10 * MIN, importance: 'important' }
+  const result = decideMissed(job, { now: 10 * MIN + 5 * MIN, lateToleranceMin: 30 })
+  assert.equal(result.action, 'miss')
+  assert.equal(result.alsoReschedule, true)
+})
+
+test('D22 · 普通周期任务超出宽限仍是静默顺延', () => {
+  const job = { cadence: { type: 'fixed', everyMinutes: 30 }, nextDueAt: 10 * MIN, importance: 'normal' }
+  const result = decideMissed(job, { now: 10 * MIN + 5 * MIN, lateToleranceMin: 30 })
+  assert.equal(result.action, 'reschedule')
+  assert.equal(result.alsoReschedule, undefined)
 })

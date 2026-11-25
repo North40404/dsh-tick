@@ -61,7 +61,7 @@
 原文档 §4 引用的三行日志：
 
 ```
-[info] 唤醒尝试 → session-1f42f947-…；sessionController 方法：ctx,name,typertRemote,…
+[info] 唤醒尝试 → session-<id>-…；sessionController 方法：ctx,name,typertRemote,…
 [warn] prompt() 失败：Cannot read properties of undefined (reading 'throwIfAborted')
 [info] resolveAgent 返回键：agent
 [warn] tj_7f8d65ec 处理失败：message "undefined" is already pending

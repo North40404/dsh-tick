@@ -24,7 +24,7 @@ export const DEFAULTS = Object.freeze({
   maxPerDay: 15,
   maxRunsPerDay: 30,
   budgetDailyTokens: 300000000,
-  minIntervalMin: 1,
+  minIntervalMin: 5,
   maxScratchChars: 200,
   lateToleranceOnceMin: 30,
   scanIntervalMin: 1,
@@ -76,7 +76,7 @@ export function normalizeHHMM(raw) {
  * 客户端校验只影响体验，安全边界在这里。
  * @param {Record<string, unknown>} input
  */
-export function validatePatch(input) {
+export function validatePatch(input, current = null) {
   const errors = {}
   const value = {}
 
@@ -178,6 +178,15 @@ export function validatePatch(input) {
     value[key] = num
   }
 
+  // D25：间隔下限不能小于扫描间隔——扫描器跟不上，更短的间隔没有意义。
+  // 只校验**本次显式传入**的 minIntervalMin，避免"把扫描间隔调到 60"这种无关改动被拦。
+  if (errors.minIntervalMin === undefined && value.minIntervalMin !== undefined) {
+    const effectiveScan = value.scanIntervalMin ?? current?.scanIntervalMin ?? DEFAULTS.scanIntervalMin
+    if (value.minIntervalMin < effectiveScan) {
+      errors.minIntervalMin =
+        `周期任务最小间隔（${value.minIntervalMin} 分钟）不能小于扫描间隔（${effectiveScan} 分钟）`
+    }
+  }
   return Object.keys(errors).length > 0 ? { ok: false, errors } : { ok: true, value }
 }
 

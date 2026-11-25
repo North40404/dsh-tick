@@ -953,7 +953,8 @@ window.__ModuleLoader__.load({
                   onChange: (e) => setDraft({ ...draft, importance: e.target.value }),
                 },
                 h('option', { value: 'normal' }, '普通'),
-                h('option', { value: 'important' }, '重要（错过会补告知）')),
+                h('option', { value: 'important' },
+                  draft.mode === 'once' ? '重要（错过会补告知）' : '重要（豁免窗口，错过会提醒）')),
               ),
               draftError ? h('div', { style: styles.error }, draftError) : null,
               h('div', { style: styles.actions },
@@ -1008,7 +1009,7 @@ window.__ModuleLoader__.load({
                       job.enabled === false ? h('span', { style: styles.badge }, '已停用') : null,
                       job.unreachable ? h('span', { style: styles.badge }, '会话不可达') : null),
                     h('div', { style: styles.itemMeta },
-                      `${describeCadence(job.cadence)} · 下次 ${formatTime(job.nextDueAt)} · ${job.origin === 'admin' ? '你设的' : '它自主设的'}${multiSession && codeOf(job.boundSessionId) ? ` · 会话 ${codeOf(job.boundSessionId)}` : ''}`),
+                      `${describeCadence(job.cadence)} · 下次 ${formatTime(job.nextDueAt)} · ${job.origin === 'admin' ? '你设的' : '它自主设的'}${multiSession && codeOf(job.boundSessionId) ? ` · 会话 ${codeOf(job.boundSessionId)}` : ''}${Number(runtime?.blockedPerJob?.[job.id] ?? 0) > 0 ? ` · 今日错过 ${Number(runtime.blockedPerJob[job.id])} 次` : ''}`),
                   ),
                   job.unreachable && selectedSessionId
                     ? h('button', {
@@ -1081,7 +1082,7 @@ window.__ModuleLoader__.load({
         })(),
         stats
           ? h('div', { style: styles.status },
-              `任务 ${stats.total} / ${stats.totalMax}　·　模型自建重要任务 ${stats.important} / ${stats.importantMax}`)
+              `任务 ${stats.total} / ${stats.totalMax}　·　模型自建重要任务 ${stats.important} / ${stats.importantMax}　·　今日周期任务执行 ${runtime?.ranTodayRecurring ?? 0} / ${runtime?.maxRunsPerDay ?? 30}　·　错过 ${runtime?.blockedToday ?? 0}`)
           : null,
         // 多会话时用编号 + 图例。每条**单行截断**（悬停看全名），
         // 否则长标题会把图例撑成好几行，把任务列表挤下去。

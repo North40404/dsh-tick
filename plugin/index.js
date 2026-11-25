@@ -16,7 +16,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 
 import { systemClock } from './src/clock.js'
-import { emptyState, evaluateGate, recordRun, rollDay } from './src/gate.js'
+import { emptyState, evaluateGate, recordBlock, recordRun, rollDay } from './src/gate.js'
 import { createJobsService } from './src/jobs.js'
 import { classifyScan, decideMissed, expiredUnreachable, nextAfterFire, pushMissed } from './src/recovery.js'
 import { sumTodayTokens } from './src/tokens.js'
@@ -564,7 +564,9 @@ export function apply(ctx, config = {}) {
               settings.missedMax,
             )
             await store.setMeta({ missed })
-            await store.removeJob(job.id)
+            // D22：周期任务补告知后继续排下一轮；一次性任务到此为止
+            if (decision.alsoReschedule) await reschedule(job, now, store)
+            else await store.removeJob(job.id)
             // 先攒着，别一条一条唤醒——同一轮里 3 条错过只该吵醒一次
             const bucket = noticesBySession.get(job.boundSessionId) ?? []
             bucket.push({ id: job.id, scratch: job.scratch, dueAt: job.nextDueAt })
@@ -574,6 +576,10 @@ export function apply(ctx, config = {}) {
 
           if (!gate.pass) {
             log('info', `${job.id} 被硬门拦下：${gate.reason} — ${gate.detail}`)
+            // D23：只统计用户能感知的原因（窗口/上限/预算），停用与不可达另有徽章
+            const before = state.blockedToday ?? 0
+            state = recordBlock(state, job.id, gate.reason)
+            if ((state.blockedToday ?? 0) !== before) await store.setMeta({ gateState: state })
             if (job.cadence.type !== 'once') {
               await reschedule(job, now, store)
             }
@@ -588,7 +594,7 @@ export function apply(ctx, config = {}) {
           }
 
           await wake(job.boundSessionId, renderTrigger(job, now))
-          state = recordRun(state, job.id)
+          state = recordRun(state, job.id, job.cadence.type)
           // 计数落盘：否则重启后 ranToday 归零，每日次数上限形同虚设
           await store.setMeta({ gateState: state })
           await store.appendRun({ id: job.id, dueAt: job.nextDueAt, firedAt: now, action: 'fire' })
@@ -729,7 +735,7 @@ export function apply(ctx, config = {}) {
   const tickOnce = {
     name: 'tick_once',
     description:
-      'Schedule a one-shot reminder for this session. Give either inMinutes (relative) or at (ISO 8601 with timezone offset). When it fires, this session is woken with your scratch note. Calendar-style repeats (daily/weekly) are not supported here — use schedule_create for those.',
+      'Schedule a one-shot reminder for this session. Give either inMinutes (relative) or at (ISO 8601 with timezone offset). When it fires, this session is woken with your scratch note. Calendar-style repeats (daily/weekly) are not supported here — use schedule_create for those. Caps: 15 runs/day per task, 30 recurring runs/day overall (configurable in settings); a shorter interval will not fire more often than that.',
     parameters: {
       type: 'object',
       properties: {
@@ -753,7 +759,7 @@ export function apply(ctx, config = {}) {
         importance: {
           type: 'string',
           enum: ['normal', 'important'],
-          description: 'important keeps a missed notice after the tolerance window.',
+          description: 'important bypasses the active-hours window and keeps a missed notice after the tolerance window (recurring: also reports missed rounds, task continues).',
         },
       },
       required: ['scratch'],
@@ -782,7 +788,7 @@ export function apply(ctx, config = {}) {
   const tickRepeat = {
     name: 'tick_repeat',
     description:
-      'Schedule a repeating task for this session. mode=fixed uses everyMinutes; mode=random draws a fresh interval from [minMinutes, maxMinutes] each time. Use it for ambient checks, not for calendar rules (use schedule_create for "every day at 09:00").',
+      'Schedule a repeating task for this session. mode=fixed uses everyMinutes; mode=random draws a fresh interval from [minMinutes, maxMinutes] each time. Use it for ambient checks, not for calendar rules (use schedule_create for "every day at 09:00"). Caps: 15 runs/day per task and 30 recurring runs/day overall, so a very short interval will be cut down.',
     parameters: {
       type: 'object',
       properties: {
@@ -950,7 +956,7 @@ export function apply(ctx, config = {}) {
         log('warn', `手动触发 ${job.id} 失败：${reason}`)
         return { ok: false, code: 'wake_failed', hint: reason }
       }
-      state = recordRun(state, job.id)
+      state = recordRun(state, job.id, job.cadence.type)
       await store.setMeta({ gateState: state })
       await store.appendRun({ id: job.id, dueAt: job.nextDueAt, firedAt: now, action: 'manual' })
       log('info', `${job.id} 已手动唤起会话 ${job.boundSessionId}`)
@@ -1072,7 +1078,11 @@ export function apply(ctx, config = {}) {
                 runtime: {
                   spentTokens: state.spentTokens,
                   ranToday: state.ranToday,
+                  ranTodayRecurring: state.ranTodayRecurring ?? 0,
+                  blockedToday: state.blockedToday ?? 0,
+                  blockedPerJob: state.blockedPerJob ?? {},
                   budgetDailyTokens: settings.budgetDailyTokens,
+                  maxRunsPerDay: settings.maxRunsPerDay,
                   lastScanAt: (await ensure()).store.meta.lastScanAt ?? 0,
                   missed: (await ensure()).store.meta.missed ?? [],
                 },
@@ -1092,7 +1102,7 @@ export function apply(ctx, config = {}) {
               return
             }
 
-            const checked = validatePatch(patch)
+            const checked = validatePatch(patch, settings)
             if (!checked.ok) {
               sendJson(res, 400, { ok: false, errors: checked.errors })
               return
